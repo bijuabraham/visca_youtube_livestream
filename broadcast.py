@@ -27,6 +27,7 @@ from oauth2client.client import flow_from_clientsecrets
 from oauth2client.file import Storage
 from oauth2client.tools import argparser, run_flow
 from visca_over_ip import Camera
+from datetime import timedelta
 
 # Define the scopes required for YouTube API access
 SCOPES = ['https://www.googleapis.com/auth/youtube.force-ssl']
@@ -64,22 +65,9 @@ youtube_service = get_authenticated_service()
 
 # start a new broadcasting service
 # Define the parameters needed for the API request
-params = {
-    'part': 'snippet,status,contentDetails',
-    'snippet': {
-        'title': 'Mar Thoma Church Of San Francisco - Livestream',
-    },
-    'status': {
-        'privacyStatus': 'public'
-    },
-    'contentDetails': {
-        'enableAutoStart': True,
-        'enableAutoStop': True
-    }
-}
-from datetime import datetime, timedelta
+
 # Get the current time
-current_time = datetime.utcnow()
+current_time = datetime.datetime.utcnow()
 
 # Set the scheduled start time to 5 minutes from the current time
 scheduled_start_time = current_time + timedelta(minutes=5)
@@ -87,23 +75,31 @@ scheduled_start_time = current_time + timedelta(minutes=5)
 # Format the scheduled start time as an ISO 8601 string
 scheduled_start_time_str = scheduled_start_time.isoformat() + 'Z'
 
-# Update the 'snippet' parameter in the 'params' dictionary
-params['snippet']['scheduledStartTime'] = scheduled_start_time_str
-
-# Set the scheduled end time to 10 minutes after the scheduled start time
+# Set the scheduled end time to 3 hours (180 minutes) after the scheduled start time
 scheduled_end_time = scheduled_start_time + timedelta(minutes=180)
 
 # Format the scheduled end time as an ISO 8601 string
 scheduled_end_time_str = scheduled_end_time.isoformat() + 'Z'
 
-# Update the 'snippet' parameter in the 'params' dictionary
-params['snippet']['scheduledEndTime'] = scheduled_end_time_str
-# Update the 'snippet' parameter in the 'params' dictionary to make the livestream public
-# Update the 'snippet' parameter in the 'params' dictionary to turn the chat off
-params['status']['selfDeclaredMadeForKids'] = False
-params['status']['liveChatStatus'] = 'disabled'
+# Define the params dictionary with all settings including scheduling
+params = {
+    'part': 'snippet,status,contentDetails',
+    'snippet': {
+        'title': 'Mar Thoma Church Of San Francisco - Livestream',
+        'scheduledStartTime': scheduled_start_time_str,
+        'scheduledEndTime': scheduled_end_time_str
+    },
+    'status': {
+        'privacyStatus': 'public',
+        'selfDeclaredMadeForKids': False,  # Indicates if the stream is made for kids
+        'liveChatStatus': 'disabled'       # Disables live chat for the stream
+    },
+    'contentDetails': {
+        'enableAutoStart': True,           # Stream starts automatically when a valid signal is detected
+        'enableAutoStop': True             # Stream stops automatically when the signal ends
+    }
+}
 
-# Create a broadcast with the above params
 broadcast_response = youtube_service.liveBroadcasts().insert(
     part='snippet,status,contentDetails',
     body=params
@@ -114,10 +110,11 @@ broadcast_id = broadcast_response['id']
 print('Broadcast ID: %s' % broadcast_id)
 
 print('Broadcast started successfully!')
-print('Powering ON Camera...')
+print('Powering OFF Camera...')
 cam = Camera('108.233.83.51')
 cam.set_power(0)
-time.sleep(5)
+time.sleep(10)
+print('Powering ON Camera...')
 cam.set_power(1)
 time.sleep(45)
 print('Panning Camera...')
