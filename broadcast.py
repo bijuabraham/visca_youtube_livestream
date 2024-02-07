@@ -28,6 +28,7 @@ from oauth2client.file import Storage
 from oauth2client.tools import argparser, run_flow
 from visca_over_ip import Camera
 from datetime import timedelta
+from google.auth.transport import requests
 
 # Define the scopes required for YouTube API access
 SCOPES = ['https://www.googleapis.com/auth/youtube.force-ssl']
@@ -50,7 +51,7 @@ def get_authenticated_service():
 
     # Refresh the token if it has expired
     if credentials.expired and credentials.refresh_token:
-        credentials.refresh(Request())
+        credentials.refresh(requests.Request())
 
         # Save the refreshed token
         with open('token.pickle', 'wb') as token_file:
